@@ -5,18 +5,9 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from constant import *
-from functions.get_files_info import schema_get_files_info
+from functions.get_files_info import *
 
 
-available_functions = types.Tool(
-    function_declarations=[
-        schema_get_files_info,
-    ]
-)
-
-config=types.GenerateContentConfig(
-    tools=[available_functions], system_instruction=system_prompt
-)
 
 
 load_dotenv()
@@ -43,25 +34,42 @@ def main():
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
 
-    generate_content(client, messages, verbose)
+    available_functions = types.Tool(
+        function_declarations=[
+            schema_get_files_info,
+            schema_get_file_content,
+            schema_run_python_file,
+            schema_write_file
+        ]
+    )   
+
+    generate_content(client, messages, verbose,available_functions)
 
 
-def generate_content(client, messages, verbose):
+def generate_content(client, messages, verbose,available_functions):
     response = client.models.generate_content(
         model = "gemini-2.0-flash-001",
         contents = messages,
-        config=types.GenerateContentConfig(system_instruction=system_prompt),
+        config=types.GenerateContentConfig(
+            tools=[available_functions], system_instruction=system_prompt),
     )
 
     print("Response: ")
     if not response.function_calls == None:
-        print (f"Calling function: {function_call_part.name}({function_call_part.args})")
+        for call in response.function_calls:
+            print (f"Calling function: {call.name}({call.args})")
     else:
         print(response.text)
 
     if verbose:
         print (F"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print (F"Response tokens: {response.usage_metadata.candidates_token_count}")
-    
+
+def call_function(function_call_part, verbose=False):
+    _
+
+
+
+
 if __name__ == "__main__":
     main()
