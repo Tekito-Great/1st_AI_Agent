@@ -170,17 +170,18 @@ schema_run_python_file = types.FunctionDeclaration(
 
 schema_write_file = types.FunctionDeclaration(
     name="write_file",
-    description="write contents to the file corresponding to the specified file path, constrained to the working directory.",
+    description="write content to the file corresponding to the specified file path, constrained to the working directory.",
     parameters=types.Schema(
         type=types.Type.OBJECT,
+        required=["file_path", "content"],
         properties={
             "file_path": types.Schema(
                 type=types.Type.STRING,
                 description="The file path to the target file, relative to the working directory.",
             ),
-            "contents": types.Schema(
+            "content": types.Schema(
                 type=types.Type.STRING,
-                description="The contents to be written.",
+                description="The content to be written to the file.",
             ),
         },
     ),
