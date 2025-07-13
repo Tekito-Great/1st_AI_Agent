@@ -34,14 +34,7 @@ def main():
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
 
-    available_functions = types.Tool(
-        function_declarations=[
-            schema_get_files_info,
-            schema_get_file_content,
-            schema_run_python_file,
-            schema_write_file
-        ]
-    )   
+
 
     generate_content(client, messages, verbose,available_functions)
 
@@ -88,7 +81,7 @@ def call_function(function_call_part, verbose=False):
 
     function_name = function_call_part.name
     args = dict(function_call_part.args)
-    args["working_directory"] = "./calculator"
+    args["working_directory"] = WORKING_DIR
 
     if verbose:
         print(f"Calling function: {function_name}({args})")
