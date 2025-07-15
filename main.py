@@ -9,7 +9,6 @@ from functions.get_files_info import *
 from call_functions import *
 
 
-
 load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -34,9 +33,27 @@ def main():
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
 
+    for step in range(20):
+        if verbose:
+            print(f"\n--- Iteration {step+1} ---")
 
+        try:
+            # ✅ generate_content() を呼び出し、結果をチェック
+            response_text = generate_content(client, messages, verbose, available_functions)
 
-    generate_content(client, messages, verbose,available_functions)
+            if response_text:
+                print("\nFinal response from model:")
+                print(response_text)
+                break  # 終了条件満たしたのでループを抜ける
+
+        except Exception as e:
+            print(f"[ERROR] Exception occurred during generation: {e}")
+            break  # エラー発生時は中断
+
+    else:
+        # ループが 20 回回っても終了しなかった場合
+        print(" Max iterations reached. Stopping.")  
+
 
 
 def generate_content(client, messages, verbose,available_functions):
@@ -44,7 +61,9 @@ def generate_content(client, messages, verbose,available_functions):
         model = "gemini-2.0-flash-001",
         contents = messages,
         config=types.GenerateContentConfig(
-            tools=[available_functions], system_instruction=system_prompt),
+            tools=[available_functions], 
+            system_instruction=system_prompt
+        ),
     )
 
     print("Response:")
@@ -53,7 +72,12 @@ def generate_content(client, messages, verbose,available_functions):
         print (F"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print (F"Response tokens: {response.usage_metadata.candidates_token_count}")
     
+    for candidate in response.candidates:
+        if candidate.content:
+            messages.append(candidate.content)
+
     if not response.function_calls:
+        print("Final response:", response.text)
         return response.text
         
     for call in response.function_calls:
@@ -66,16 +90,15 @@ def generate_content(client, messages, verbose,available_functions):
         
         # verbose の場合、結果を表示
         if verbose:
-            print(f"-> {response_data}")
+            print(f"response data -> {response_data}")
+
+        messages.append(function_call_result)
     
         print("**********************************************")
         print(f"CHECK1 call.name :{call.name}")
         print(f"CHECK2 call.arg  :{call.args}")
         print(f"CHECK3 call      :{call}")
-
-
-
-  
+        print(f"messages         :{messages}")
 
 
 if __name__ == "__main__":
